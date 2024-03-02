@@ -85,6 +85,10 @@ function GetAvailablePresets()
     for _, file in ipairs(dir('presets')) do
         table.insert(presetList, StrReplace(file.name, ".json", ""))
     end
+
+    if #presetList >= 1 then
+        selectedPresetName = presetList[1]
+    end
 end
 
 function StrEndsWith(str, ending)
@@ -231,6 +235,8 @@ registerForEvent("onDraw", function()
     end
 
     ImGui.Spacing()
+    ImGui.Spacing()
+
     if ImGui.Button(" Reset Defaults ") then
         settings.Current.size = defaultSize
         settings.Current.minRange = defaultMinRange
@@ -244,56 +250,61 @@ registerForEvent("onDraw", function()
     ImGui.Spacing()
     ImGui.Separator()
     ImGui.Spacing()
-    ImGui.Spacing()
 
-    presetInputFileName, _ = ImGui.InputText("##SavePresetFilename", presetInputFileName, 44)
+    if ImGui.CollapsingHeader("Presets") then
+        ImGui.Spacing()
 
-    ImGui.SameLine(384)
-    if ImGui.Button(" Save Preset ") then
-        preset.size = settings.Current.size
-        preset.minRange = settings.Current.minRange
-        preset.maxRange = settings.Current.maxRange
-        SavePreset(presetInputFileName)
-        table.insert(presetList, presetInputFileName)
-        presetList = removeDuplicates(presetList)
-        presetInputFileName = ""
-    end
+        presetInputFileName, _ = ImGui.InputText("##SavePresetFilename", presetInputFileName, 44)
 
-
-    ImGui.Spacing()
-    if ImGui.BeginCombo("##LoadPresetCombo", selectedPresetName, ImGuiComboFlags.HeightLarge) then
-        for _, option in ipairs(presetList) do
-            if ImGui.Selectable(option, (option == selectedPresetName)) then
-                selectedPresetName = option
-                ImGui.SetItemDefaultFocus()
+        ImGui.SameLine(384)
+        if ImGui.Button(" Save Preset ") then
+            preset.size = settings.Current.size
+            preset.minRange = settings.Current.minRange
+            preset.maxRange = settings.Current.maxRange
+            if presetInputFileName ~= "" then
+                SavePreset(presetInputFileName)
+                table.insert(presetList, presetInputFileName)
+                presetList = removeDuplicates(presetList)
+                presetInputFileName = ""
             end
         end
-        ImGui.EndCombo()
-    end
 
-    ImGui.SameLine(384)
-    if ImGui.Button(" Load Preset ") then
-        LoadPreset(selectedPresetName)
-        settings.Current.size = preset.size
-        settings.Current.minRange = preset.minRange
-        settings.Current.maxRange = preset.maxRange
-        GameOptions.SetInt('Rendering/LUT', 'Size', settings.Current.size)
-        GameOptions.SetFloat('Rendering/LUT', 'MinRange', settings.Current.minRange)
-        GameOptions.SetFloat('Rendering/LUT', 'MaxRange', settings.Current.maxRange)
-        SaveSettings()
-    end
 
-    ImGui.SameLine(481)
-    if ImGui.Button(" Delete Preset ") then
-        for i, v in pairs(presetList) do
-            if v == selectedPresetName then
-                table.remove(presetList, i)
-                os.remove("presets\\" .. selectedPresetName .. ".json")
-                selectedPresetName = ""
+        ImGui.Spacing()
+        if ImGui.BeginCombo("##LoadPresetCombo", selectedPresetName, ImGuiComboFlags.HeightLarge) then
+            for _, option in ipairs(presetList) do
+                if ImGui.Selectable(option, (option == selectedPresetName)) then
+                    selectedPresetName = option
+                    ImGui.SetItemDefaultFocus()
+                end
+            end
+            ImGui.EndCombo()
+        end
+
+        ImGui.SameLine(384)
+        if ImGui.Button(" Load Preset ") then
+            LoadPreset(selectedPresetName)
+            settings.Current.size = preset.size
+            settings.Current.minRange = preset.minRange
+            settings.Current.maxRange = preset.maxRange
+            GameOptions.SetInt('Rendering/LUT', 'Size', settings.Current.size)
+            GameOptions.SetFloat('Rendering/LUT', 'MinRange', settings.Current.minRange)
+            GameOptions.SetFloat('Rendering/LUT', 'MaxRange', settings.Current.maxRange)
+            SaveSettings()
+        end
+
+        ImGui.SameLine(481)
+        if ImGui.Button(" Delete Preset ") then
+            for i, v in pairs(presetList) do
+                if v == selectedPresetName then
+                    table.remove(presetList, i)
+                    os.remove("presets\\" .. selectedPresetName .. ".json")
+                    selectedPresetName = ""
+                end
             end
         end
     end
-    
+
     ImGui.PopItemWidth();
     ImGui.End()
 end)
