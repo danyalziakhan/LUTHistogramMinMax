@@ -10,17 +10,17 @@ local maximumEffectiveMinRange = 0.1
 local minimumEffectiveMaxRange = 0.1
 local maximumEffectiveMaxRange = 100000000000000000000000000000000000000.0
 
+local started = true
+local showErrorText = false
 local presetInputFileName = ""
 local selectedPresetName = ""
 local presetList = {}
 
 local configFileName = "config.json"
 local settings = {
-    Current = {
-        size = 48,
-        minRange = 0.01,
-        maxRange = 100.0,
-    }
+    size = 48,
+    minRange = 0.01,
+    maxRange = 100.0,
 }
 
 local preset = {
@@ -113,7 +113,7 @@ function StrReplace(str, old, new)
     return str
 end
 
-local function removeDuplicates(arr)
+function RemoveDuplicates(arr)
     local newArray = {}
     local checkerTbl = {}
     for _, element in ipairs(arr) do
@@ -123,6 +123,14 @@ local function removeDuplicates(arr)
         end
     end
     return newArray
+end
+
+function isspace(str)
+    return #string.match(str, "%s*") == #str
+  end
+
+function trim(s)
+    return (string.gsub(s, "^%s*(.-)%s*$", "%1"))
 end
 
 registerForEvent("onOverlayOpen", function()
@@ -144,93 +152,93 @@ registerForEvent("onDraw", function()
     ImGui.Begin("LUT Histogram Min/Max", ImGuiWindowFlags.AlwaysAutoResize)
     ImGui.PushItemWidth(itemWidth);
 
-    settings.Current.size, isSizeChanged = ImGui.SliderInt(" Size ", settings.Current.size, 2, 128)
+    settings.size, isSizeChanged = ImGui.SliderInt(" Size ", settings.size, 2, 128)
 
     if isSizeChanged then
-        GameOptions.SetInt('Rendering/LUT', 'Size', settings.Current.size)
+        GameOptions.SetInt('Rendering/LUT', 'Size', settings.size)
         SaveSettings()
     end
 
     ImGui.SameLine(sameLineWidth)
     if ImGui.SmallButton(" << ##1") then
-        settings.Current.size = 2
-        GameOptions.SetInt('Rendering/LUT', 'Size', settings.Current.size)
+        settings.size = 2
+        GameOptions.SetInt('Rendering/LUT', 'Size', settings.size)
         SaveSettings()
     end
 
     ImGui.SameLine()
     if ImGui.SmallButton(" Reset ##1") then
-        settings.Current.size = defaultSize
-        GameOptions.SetInt('Rendering/LUT', 'Size', settings.Current.size)
+        settings.size = defaultSize
+        GameOptions.SetInt('Rendering/LUT', 'Size', settings.size)
         SaveSettings()
     end
 
     ImGui.SameLine()
     if ImGui.SmallButton(" >> ##1") then
-        settings.Current.size = 128
-        GameOptions.SetInt('Rendering/LUT', 'Size', settings.Current.size)
+        settings.size = 128
+        GameOptions.SetInt('Rendering/LUT', 'Size', settings.size)
         SaveSettings()
     end
 
     ImGui.Spacing()
-    settings.Current.minRange, isMinRangeChanged = ImGui.DragFloat(" Min Range ", settings.Current.minRange,
-        settings.Current.minRange * 0.01, minimumEffectiveMinRange, maximumEffectiveMinRange, "%.37f",
+    settings.minRange, isMinRangeChanged = ImGui.DragFloat(" Min Range ", settings.minRange,
+        settings.minRange * 0.02, minimumEffectiveMinRange, maximumEffectiveMinRange, "%.37f",
         ImGuiSliderFlags.ClampOnInput)
 
     if isMinRangeChanged then
-        GameOptions.SetFloat('Rendering/LUT', 'MinRange', settings.Current.minRange)
+        GameOptions.SetFloat('Rendering/LUT', 'MinRange', settings.minRange)
         SaveSettings()
     end
 
     ImGui.SameLine(sameLineWidth)
     if ImGui.SmallButton(" << ##2") then
-        settings.Current.minRange = minimumEffectiveMinRange
-        GameOptions.SetFloat('Rendering/LUT', 'MinRange', settings.Current.minRange)
+        settings.minRange = minimumEffectiveMinRange
+        GameOptions.SetFloat('Rendering/LUT', 'MinRange', settings.minRange)
         SaveSettings()
     end
 
     ImGui.SameLine()
     if ImGui.SmallButton(" Reset ##2") then
-        settings.Current.minRange = defaultMinRange
-        GameOptions.SetFloat('Rendering/LUT', 'MinRange', settings.Current.minRange)
+        settings.minRange = defaultMinRange
+        GameOptions.SetFloat('Rendering/LUT', 'MinRange', settings.minRange)
         SaveSettings()
     end
 
     ImGui.SameLine()
     if ImGui.SmallButton(" >> ##2") then
-        settings.Current.minRange = maximumEffectiveMinRange
-        GameOptions.SetFloat('Rendering/LUT', 'MinRange', settings.Current.minRange)
+        settings.minRange = maximumEffectiveMinRange
+        GameOptions.SetFloat('Rendering/LUT', 'MinRange', settings.minRange)
         SaveSettings()
     end
 
     ImGui.Spacing()
-    settings.Current.maxRange, isMaxRangeChanged = ImGui.DragFloat(" Max Range ", settings.Current.maxRange,
-        settings.Current.maxRange * 0.01, minimumEffectiveMaxRange, maximumEffectiveMaxRange, "%.2f",
+    settings.maxRange, isMaxRangeChanged = ImGui.DragFloat(" Max Range ", settings.maxRange,
+        settings.maxRange * 0.02, minimumEffectiveMaxRange, maximumEffectiveMaxRange, "%.2f",
         ImGuiSliderFlags.ClampOnInput)
 
     if isMaxRangeChanged then
-        GameOptions.SetFloat('Rendering/LUT', 'MaxRange', settings.Current.maxRange)
+        GameOptions.SetFloat('Rendering/LUT', 'MaxRange', settings.maxRange)
         SaveSettings()
     end
 
     ImGui.SameLine(sameLineWidth)
     if ImGui.SmallButton(" << ##3") then
-        settings.Current.maxRange = minimumEffectiveMaxRange
-        GameOptions.SetFloat('Rendering/LUT', 'MaxRange', settings.Current.maxRange)
+        settings.maxRange = minimumEffectiveMaxRange
+        GameOptions.SetFloat('Rendering/LUT', 'MaxRange', settings.maxRange)
         SaveSettings()
     end
 
     ImGui.SameLine()
     if ImGui.SmallButton(" Reset ##3") then
-        settings.Current.maxRange = defaultMaxRange
-        GameOptions.SetFloat('Rendering/LUT', 'MaxRange', settings.Current.maxRange)
+        settings.maxRange = defaultMaxRange
+        GameOptions.SetFloat('Rendering/LUT', 'MaxRange', settings.maxRange)
         SaveSettings()
     end
 
     ImGui.SameLine()
     if ImGui.SmallButton(" >> ##3") then
-        settings.Current.maxRange = maximumEffectiveMaxRange
-        GameOptions.SetFloat('Rendering/LUT', 'MaxRange', settings.Current.maxRange)
+        settings.maxRange = maximumEffectiveMaxRange
+        GameOptions.SetFloat('Rendering/LUT', 'MaxRange', settings.maxRange)
         SaveSettings()
     end
 
@@ -238,12 +246,12 @@ registerForEvent("onDraw", function()
     ImGui.Spacing()
 
     if ImGui.Button(" Reset Defaults ") then
-        settings.Current.size = defaultSize
-        settings.Current.minRange = defaultMinRange
-        settings.Current.maxRange = defaultMaxRange
-        GameOptions.SetInt('Rendering/LUT', 'Size', settings.Current.size)
-        GameOptions.SetFloat('Rendering/LUT', 'MinRange', settings.Current.minRange)
-        GameOptions.SetFloat('Rendering/LUT', 'MaxRange', settings.Current.maxRange)
+        settings.size = defaultSize
+        settings.minRange = defaultMinRange
+        settings.maxRange = defaultMaxRange
+        GameOptions.SetInt('Rendering/LUT', 'Size', settings.size)
+        GameOptions.SetFloat('Rendering/LUT', 'MinRange', settings.minRange)
+        GameOptions.SetFloat('Rendering/LUT', 'MaxRange', settings.maxRange)
         SaveSettings()
     end
 
@@ -251,21 +259,40 @@ registerForEvent("onDraw", function()
     ImGui.Separator()
     ImGui.Spacing()
 
+    if started then
+        ImGui.SetNextItemOpen(true)
+    end
+
     if ImGui.CollapsingHeader("Presets") then
         ImGui.Spacing()
 
+        if showErrorText then
+            ImGui.PushStyleColor(ImGuiCol.Text, 1.0, 0.23, 0.23, 1.0)
+            ImGui.Text("Filename cannot be empty.")
+            ImGui.PopStyleColor(1)
+        end
+
         presetInputFileName, _ = ImGui.InputText("##SavePresetFilename", presetInputFileName, 44)
+
+        if presetInputFileName ~= "" and not isspace(presetInputFileName) then
+            showErrorText = false
+        end
 
         ImGui.SameLine(384)
         if ImGui.Button(" Save Preset ") then
-            preset.size = settings.Current.size
-            preset.minRange = settings.Current.minRange
-            preset.maxRange = settings.Current.maxRange
-            if presetInputFileName ~= "" then
+            preset.size = settings.size
+            preset.minRange = settings.minRange
+            preset.maxRange = settings.maxRange
+            if presetInputFileName == "" or isspace(presetInputFileName) then
+                showErrorText = true
+            else
+                presetInputFileName = trim(presetInputFileName)
                 SavePreset(presetInputFileName)
                 table.insert(presetList, presetInputFileName)
-                presetList = removeDuplicates(presetList)
+                presetList = RemoveDuplicates(presetList)
+                selectedPresetName = presetInputFileName
                 presetInputFileName = ""
+                showErrorText = false
             end
         end
 
@@ -284,13 +311,15 @@ registerForEvent("onDraw", function()
         ImGui.SameLine(384)
         if ImGui.Button(" Load Preset ") then
             LoadPreset(selectedPresetName)
-            settings.Current.size = preset.size
-            settings.Current.minRange = preset.minRange
-            settings.Current.maxRange = preset.maxRange
-            GameOptions.SetInt('Rendering/LUT', 'Size', settings.Current.size)
-            GameOptions.SetFloat('Rendering/LUT', 'MinRange', settings.Current.minRange)
-            GameOptions.SetFloat('Rendering/LUT', 'MaxRange', settings.Current.maxRange)
+            settings.size = preset.size
+            settings.minRange = preset.minRange
+            settings.maxRange = preset.maxRange
+            GameOptions.SetInt('Rendering/LUT', 'Size', settings.size)
+            GameOptions.SetFloat('Rendering/LUT', 'MinRange', settings.minRange)
+            GameOptions.SetFloat('Rendering/LUT', 'MaxRange', settings.maxRange)
             SaveSettings()
+            presetInputFileName = ""
+            showErrorText = false
         end
 
         ImGui.SameLine(481)
@@ -302,19 +331,23 @@ registerForEvent("onDraw", function()
                     selectedPresetName = ""
                 end
             end
+            presetInputFileName = ""
+            showErrorText = false
         end
     end
 
     ImGui.PopItemWidth();
     ImGui.End()
+
+    if started then started = false end
 end)
 
 registerForEvent('onInit', function()
     LoadSettings()
     GetAvailablePresets()
-    GameOptions.SetInt('Rendering/LUT', 'Size', settings.Current.size)
-    GameOptions.SetFloat('Rendering/LUT', 'MinRange', settings.Current.minRange)
-    GameOptions.SetFloat('Rendering/LUT', 'MaxRange', settings.Current.maxRange)
+    GameOptions.SetInt('Rendering/LUT', 'Size', settings.size)
+    GameOptions.SetFloat('Rendering/LUT', 'MinRange', settings.minRange)
+    GameOptions.SetFloat('Rendering/LUT', 'MaxRange', settings.maxRange)
 end)
 
 registerForEvent('onUpdate', function(delta)
