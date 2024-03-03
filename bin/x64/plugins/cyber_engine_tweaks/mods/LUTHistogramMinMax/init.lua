@@ -3,7 +3,7 @@ local Cron = require('Modules/Cron')
 local isOverlayOpen = false
 
 local defaultSize = 48
-local defaultMinRange = 0.01
+local defaultMinRange = 0.001
 local defaultMaxRange = 100.0
 local minimumEffectiveMinRange = 0.0000000000000000000000000000000000001
 local maximumEffectiveMinRange = 0.1
