@@ -17,17 +17,9 @@ local selectedPresetName = ""
 local presetList = {}
 
 local configFileName = "config.json"
-local settings = {
-    size = 48,
-    minRange = 0.01,
-    maxRange = 100.0,
-}
+local settings = { size = 48, minRange = 0.01, maxRange = 100.0 }
 
-local preset = {
-    size = 48,
-    minRange = 0.01,
-    maxRange = 100.0,
-}
+local preset = { size = 48, minRange = 0.01, maxRange = 100.0 }
 
 function LoadSettings()
     local file = io.open(configFileName, "r")
@@ -48,9 +40,7 @@ function SaveSettings()
 end
 
 function LoadPreset(filename)
-    if not StrEndsWith(filename, ".json") then
-        filename = filename .. ".json"
-    end
+    if not StrEndsWith(filename, ".json") then filename = filename .. ".json" end
 
     local file = io.open("presets\\" .. filename, "r")
     if file ~= nil then
@@ -61,9 +51,7 @@ function LoadPreset(filename)
 end
 
 function SavePreset(filename)
-    if not StrEndsWith(filename, ".json") then
-        filename = filename .. ".json"
-    end
+    if not StrEndsWith(filename, ".json") then filename = filename .. ".json" end
 
     local file = io.open("presets\\" .. filename, "w")
     if file ~= nil then
@@ -74,9 +62,7 @@ function SavePreset(filename)
 end
 
 function DeletePreset(filename)
-    if not StrEndsWith(filename, ".json") then
-        filename = filename .. ".json"
-    end
+    if not StrEndsWith(filename, ".json") then filename = filename .. ".json" end
 
     os.remove("presets\\" .. filename)
 end
@@ -86,9 +72,7 @@ function GetAvailablePresets()
         table.insert(presetList, StrReplace(file.name, ".json", ""))
     end
 
-    if #presetList >= 1 then
-        selectedPresetName = presetList[1]
-    end
+    if #presetList >= 1 then selectedPresetName = presetList[1] end
 end
 
 function StrEndsWith(str, ending)
@@ -100,9 +84,7 @@ function StrReplace(str, old, new)
 
     while true do
         local start_idx, end_idx = str:find(old, search_start_idx, true)
-        if (not start_idx) then
-            break
-        end
+        if (not start_idx) then break end
 
         local postfix = str:sub(end_idx + 1)
         str = str:sub(1, (start_idx - 1)) .. new .. postfix
@@ -125,26 +107,16 @@ function RemoveDuplicates(arr)
     return newArray
 end
 
-function isspace(str)
-    return #string.match(str, "%s*") == #str
-  end
+function isspace(str) return #string.match(str, "%s*") == #str end
 
-function trim(s)
-    return (string.gsub(s, "^%s*(.-)%s*$", "%1"))
-end
+function trim(s) return (string.gsub(s, "^%s*(.-)%s*$", "%1")) end
 
-registerForEvent("onOverlayOpen", function()
-    isOverlayOpen = true
-end)
+registerForEvent("onOverlayOpen", function() isOverlayOpen = true end)
 
-registerForEvent("onOverlayClose", function()
-    isOverlayOpen = false
-end)
+registerForEvent("onOverlayClose", function() isOverlayOpen = false end)
 
 registerForEvent("onDraw", function()
-    if not isOverlayOpen then
-        return
-    end
+    if not isOverlayOpen then return end
 
     local itemWidth = 360
     local sameLineWidth = 452
@@ -152,7 +124,8 @@ registerForEvent("onDraw", function()
     ImGui.Begin("LUT Histogram Min/Max", ImGuiWindowFlags.AlwaysAutoResize)
     ImGui.PushItemWidth(itemWidth);
 
-    settings.size, isSizeChanged = ImGui.SliderInt(" Size ", settings.size, 2, 128)
+    settings.size, isSizeChanged = ImGui.SliderInt(" Size ", settings.size, 2,
+        128)
 
     if isSizeChanged then
         GameOptions.SetInt('Rendering/LUT', 'Size', settings.size)
@@ -181,9 +154,10 @@ registerForEvent("onDraw", function()
     end
 
     ImGui.Spacing()
-    settings.minRange, isMinRangeChanged = ImGui.DragFloat(" Min Range ", settings.minRange,
-        settings.minRange * 0.02, minimumEffectiveMinRange, maximumEffectiveMinRange, "%.37f",
-        ImGuiSliderFlags.ClampOnInput)
+    settings.minRange, isMinRangeChanged =
+        ImGui.DragFloat(" Min Range ", settings.minRange,
+            settings.minRange * 0.02, minimumEffectiveMinRange,
+            maximumEffectiveMinRange, "%.37f")
 
     if isMinRangeChanged then
         GameOptions.SetFloat('Rendering/LUT', 'MinRange', settings.minRange)
@@ -212,9 +186,10 @@ registerForEvent("onDraw", function()
     end
 
     ImGui.Spacing()
-    settings.maxRange, isMaxRangeChanged = ImGui.DragFloat(" Max Range ", settings.maxRange,
-        settings.maxRange * 0.02, minimumEffectiveMaxRange, maximumEffectiveMaxRange, "%.2f",
-        ImGuiSliderFlags.ClampOnInput)
+    settings.maxRange, isMaxRangeChanged =
+        ImGui.DragFloat(" Max Range ", settings.maxRange,
+            settings.maxRange * 0.02, minimumEffectiveMaxRange,
+            maximumEffectiveMaxRange, "%.2f")
 
     if isMaxRangeChanged then
         GameOptions.SetFloat('Rendering/LUT', 'MaxRange', settings.maxRange)
@@ -259,9 +234,7 @@ registerForEvent("onDraw", function()
     ImGui.Separator()
     ImGui.Spacing()
 
-    if started then
-        ImGui.SetNextItemOpen(true)
-    end
+    if started then ImGui.SetNextItemOpen(true) end
 
     if ImGui.CollapsingHeader("Presets") then
         ImGui.Spacing()
@@ -272,7 +245,8 @@ registerForEvent("onDraw", function()
             ImGui.PopStyleColor(1)
         end
 
-        presetInputFileName, _ = ImGui.InputText("##SavePresetFilename", presetInputFileName, 44)
+        presetInputFileName, _ = ImGui.InputText("##SavePresetFilename",
+            presetInputFileName, 44)
 
         if presetInputFileName ~= "" and not isspace(presetInputFileName) then
             showErrorText = false
@@ -296,9 +270,9 @@ registerForEvent("onDraw", function()
             end
         end
 
-
         ImGui.Spacing()
-        if ImGui.BeginCombo("##LoadPresetCombo", selectedPresetName, ImGuiComboFlags.HeightLarge) then
+        if ImGui.BeginCombo("##LoadPresetCombo", selectedPresetName,
+                ImGuiComboFlags.HeightLarge) then
             for _, option in ipairs(presetList) do
                 if ImGui.Selectable(option, (option == selectedPresetName)) then
                     selectedPresetName = option
