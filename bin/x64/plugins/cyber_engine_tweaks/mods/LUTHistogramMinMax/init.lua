@@ -1,4 +1,7 @@
 local Cron = require('Modules/Cron')
+local Localization = require("Modules/Localization")
+
+local UIText = Localization.GetUIText()
 
 local isOverlayOpen = false
 
@@ -69,7 +72,9 @@ end
 
 function GetAvailablePresets()
     for _, file in ipairs(dir('presets')) do
-        table.insert(presetList, StrReplace(file.name, ".json", ""))
+        if file.name ~= "__folder_managed_by_vortex" then
+            table.insert(presetList, StrReplace(file.name, ".json", ""))
+        end
     end
 
     if #presetList >= 1 then selectedPresetName = presetList[1] end
@@ -111,7 +116,12 @@ function isspace(str) return #string.match(str, "%s*") == #str end
 
 function trim(s) return (string.gsub(s, "^%s*(.-)%s*$", "%1")) end
 
-registerForEvent("onOverlayOpen", function() isOverlayOpen = true end)
+registerForEvent("onOverlayOpen", function()
+    isOverlayOpen = true
+
+    --translate UIText before other modules access it
+    UIText = Localization.GetTranslation(UIText, "UIText")
+end)
 
 registerForEvent("onOverlayClose", function() isOverlayOpen = false end)
 
@@ -119,12 +129,12 @@ registerForEvent("onDraw", function()
     if not isOverlayOpen then return end
 
     local itemWidth = 360
-    local sameLineWidth = 452
+    local sameLineWidth = 500
 
-    ImGui.Begin("LUT Histogram Min/Max", ImGuiWindowFlags.AlwaysAutoResize)
+    ImGui.Begin(UIText.modName, ImGuiWindowFlags.AlwaysAutoResize)
     ImGui.PushItemWidth(itemWidth);
 
-    settings.size, isSizeChanged = ImGui.SliderInt(" Size ", settings.size, 2,
+    settings.size, isSizeChanged = ImGui.SliderInt(UIText.sizeSlider, settings.size, 2,
         128)
 
     if isSizeChanged then
@@ -140,7 +150,7 @@ registerForEvent("onDraw", function()
     end
 
     ImGui.SameLine()
-    if ImGui.SmallButton(" Reset ##1") then
+    if ImGui.SmallButton(UIText.resetButton .. "##1") then
         settings.size = defaultSize
         GameOptions.SetInt('Rendering/LUT', 'Size', settings.size)
         SaveSettings()
@@ -155,7 +165,7 @@ registerForEvent("onDraw", function()
 
     ImGui.Spacing()
     settings.minRange, isMinRangeChanged =
-        ImGui.DragFloat(" Min Range ", settings.minRange,
+        ImGui.DragFloat(UIText.minRangeDragFloat, settings.minRange,
             settings.minRange * 0.02, minimumEffectiveMinRange,
             maximumEffectiveMinRange, "%.37f")
 
@@ -172,7 +182,7 @@ registerForEvent("onDraw", function()
     end
 
     ImGui.SameLine()
-    if ImGui.SmallButton(" Reset ##2") then
+    if ImGui.SmallButton(UIText.resetButton .. "##2") then
         settings.minRange = defaultMinRange
         GameOptions.SetFloat('Rendering/LUT', 'MinRange', settings.minRange)
         SaveSettings()
@@ -187,7 +197,7 @@ registerForEvent("onDraw", function()
 
     ImGui.Spacing()
     settings.maxRange, isMaxRangeChanged =
-        ImGui.DragFloat(" Max Range ", settings.maxRange,
+        ImGui.DragFloat(UIText.maxRangeDragFloat, settings.maxRange,
             settings.maxRange * 0.02, minimumEffectiveMaxRange,
             maximumEffectiveMaxRange, "%.2f")
 
@@ -204,7 +214,7 @@ registerForEvent("onDraw", function()
     end
 
     ImGui.SameLine()
-    if ImGui.SmallButton(" Reset ##3") then
+    if ImGui.SmallButton(UIText.resetButton .. "##3") then
         settings.maxRange = defaultMaxRange
         GameOptions.SetFloat('Rendering/LUT', 'MaxRange', settings.maxRange)
         SaveSettings()
@@ -220,7 +230,7 @@ registerForEvent("onDraw", function()
     ImGui.Spacing()
     ImGui.Spacing()
 
-    if ImGui.Button(" Reset Defaults ") then
+    if ImGui.Button(UIText.resetDefaultsButton) then
         settings.size = defaultSize
         settings.minRange = defaultMinRange
         settings.maxRange = defaultMaxRange
@@ -236,12 +246,12 @@ registerForEvent("onDraw", function()
 
     if started then ImGui.SetNextItemOpen(true) end
 
-    if ImGui.CollapsingHeader("Presets") then
+    if ImGui.CollapsingHeader(UIText.presetsHeader) then
         ImGui.Spacing()
 
         if showErrorText then
             ImGui.PushStyleColor(ImGuiCol.Text, 1.0, 0.23, 0.23, 1.0)
-            ImGui.Text("Filename cannot be empty.")
+            ImGui.Text(UIText.fileNameError)
             ImGui.PopStyleColor(1)
         end
 
@@ -252,8 +262,8 @@ registerForEvent("onDraw", function()
             showErrorText = false
         end
 
-        ImGui.SameLine(384)
-        if ImGui.Button(" Save Preset ") then
+        ImGui.SameLine()
+        if ImGui.Button(UIText.savePresetButton) then
             preset.size = settings.size
             preset.minRange = settings.minRange
             preset.maxRange = settings.maxRange
@@ -282,8 +292,8 @@ registerForEvent("onDraw", function()
             ImGui.EndCombo()
         end
 
-        ImGui.SameLine(384)
-        if ImGui.Button(" Load Preset ") then
+        ImGui.SameLine()
+        if ImGui.Button(UIText.loadPresetButton) then
             LoadPreset(selectedPresetName)
             settings.size = preset.size
             settings.minRange = preset.minRange
@@ -296,8 +306,8 @@ registerForEvent("onDraw", function()
             showErrorText = false
         end
 
-        ImGui.SameLine(481)
-        if ImGui.Button(" Delete Preset ") then
+        ImGui.SameLine()
+        if ImGui.Button(UIText.deletePresetButton) then
             for i, v in pairs(presetList) do
                 if v == selectedPresetName then
                     table.remove(presetList, i)
