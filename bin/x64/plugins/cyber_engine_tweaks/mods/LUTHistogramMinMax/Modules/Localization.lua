@@ -1,4 +1,4 @@
-Localization = {}
+local Localization = {}
 
 local UIText = {
   modName = "LUT Histogram Min/Max",
@@ -12,69 +12,73 @@ local UIText = {
   savePresetButton = " Save Preset ",
   loadPresetButton = " Load Preset ",
   deletePresetButton = " Delete Preset ",
+  fileNameInvalidError = "Filename cannot contain \\ / : * ? \" < > |",
+  presetSaveError = "Preset could not be saved.",
+  presetLoadError = "Preset could not be read.",
+  sizeTooltip = "LUT resolution. The game default is 48.",
+  minRangeTooltip = "Lower end of the LUT range. Lowering it can bring back detail in crushed blacks.",
+  maxRangeTooltip = "Upper end of the LUT range. Lowering it tones down overblown highlights such as neon signs.",
+  minButtonTooltip = "Set to the lowest value",
+  maxButtonTooltip = "Set to the highest value",
+  savePresetTooltip = "Save the current values under this name. An existing preset with the same name is replaced.",
 }
 
 local modDefaultLang = "en-us"
 
-local FallbackBoard = {}
+local fallbacks = {}
+local cachedLanguage = nil
+local cachedTranslation = nil
 
-function Deepcopy(contents)
-  if contents == nil then return contents end
+local function Copy(source)
+  local copy = {}
 
-  local contentsType = type(contents)
-  local copy
-
-  if contentsType == 'table' then
-    copy = {}
-
-    for key, value in next, contents, nil do
-      copy[Deepcopy(key)] = Deepcopy(value)
+  for key, value in pairs(source) do
+    if type(value) == "table" then
+      copy[key] = Copy(value)
+    else
+      copy[key] = value
     end
-
-    setmetatable(copy, Deepcopy(getmetatable(contents)))
-  else
-    copy = contents
   end
 
   return copy
 end
 
-function SafeMergeTables(mergeTo, mergeA)
-  if mergeA == nil then return mergeTo end
+-- only known keys of the same type
+local function MergeKnownKeys(target, source)
+  if type(source) ~= "table" then
+    return target
+  end
 
-  for key, value in pairs(mergeA) do
-    if mergeTo[key] ~= nil then -- Only proceed if the key exists in mergeTo
-      if type(value) == "table" and type(mergeTo[key]) == "table" then
-        mergeTo[key] = SafeMergeTables(mergeTo[key], value)
-      else
-        mergeTo[key] = value
+  for key, value in pairs(source) do
+    if target[key] ~= nil then
+      if type(value) == "table" and type(target[key]) == "table" then
+        MergeKnownKeys(target[key], value)
+      elseif type(value) == type(target[key]) then
+        target[key] = value
       end
     end
   end
 
-  return mergeTo
+  return target
 end
 
-function SetFallback(owner, contents, key)
-  local copiedContents = Deepcopy(contents)
+local function LoadTranslation(language)
+  if language ~= cachedLanguage then
+    cachedLanguage = language
+    cachedTranslation = nil
 
-  if key then
-    FallbackBoard[owner] = FallbackBoard[owner] or {}
-    FallbackBoard[owner][key] = copiedContents
-  else
-    FallbackBoard[owner] = copiedContents
+    local chunk = loadfile("Translations/" .. language .. ".lua")
+
+    if chunk then
+      local ok, result = pcall(chunk)
+
+      if ok and type(result) == "table" then
+        cachedTranslation = result
+      end
+    end
   end
-end
 
-function GetFallback(owner, key)
-  if FallbackBoard[owner] == nil then return nil end
-  if key and FallbackBoard[owner] and FallbackBoard[owner][key] == nil then return nil end
-
-  if key then
-    return FallbackBoard[owner][key]
-  else
-    return FallbackBoard[owner]
-  end
+  return cachedTranslation
 end
 
 function Localization.GetUIText()
@@ -85,39 +89,26 @@ function Localization.GetOnScreenLanguage()
   return Game.NameToString(Game.GetSettingsSystem():GetVar("/language", "OnScreen"):GetValue())
 end
 
-local function GetNewLocalization(sourceTable, key, currentLang)
-  if GetFallback("Localization", key) == nil then
-    SetFallback("Localization", sourceTable, key)
+function Localization.GetTranslation(sourceTable, key)
+  if fallbacks[key] == nil then
+    fallbacks[key] = Copy(sourceTable)
   else
-    sourceTable = SafeMergeTables(sourceTable, GetFallback("Localization", key))
+    MergeKnownKeys(sourceTable, fallbacks[key])
   end
 
-  local translationFile = "Translations/" .. currentLang .. ".lua"
-  local chunk = loadfile(translationFile)
+  local ok, language = pcall(Localization.GetOnScreenLanguage)
 
-  if chunk then
-    local translation = chunk()
-    return SafeMergeTables(sourceTable, translation[key])
-  else
+  if not ok or language == modDefaultLang then
     return sourceTable
   end
-end
 
-local function GetDefaultLocalization(sourceTable, key)
-  local fallback = GetFallback("Localization", key)
-  return fallback and SafeMergeTables(sourceTable, fallback) or sourceTable
-end
+  local translation = LoadTranslation(language)
 
-function Localization.GetTranslation(sourceTable, key)
-  local currentLang = Localization.GetOnScreenLanguage()
-
-  if currentLang == modDefaultLang then return GetDefaultLocalization(sourceTable, key) end
-
-  if currentLang == modDefaultLang then
-    return GetDefaultLocalization(sourceTable, key)
-  else
-    return GetNewLocalization(sourceTable, key, currentLang)
+  if translation then
+    MergeKnownKeys(sourceTable, translation[key])
   end
+
+  return sourceTable
 end
 
 return Localization

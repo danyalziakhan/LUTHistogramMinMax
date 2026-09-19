@@ -1,0 +1,4 @@
+config.json
+db.sqlite3
+*.log
+*.zip
